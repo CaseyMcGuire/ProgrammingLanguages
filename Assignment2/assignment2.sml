@@ -152,3 +152,47 @@ fun score (card_list : card list, goal : int) =
 		  else preliminary_score
   in score
   end
+
+(* Write a function officiate, which "runs a game." It takes a card list and a move list (what the player does at 
+ each point), and an int (the goal) and returns the score at the end of the game after processing (some or all of) 
+ the moves in the move list in order.*)
+
+fun officiate (card_list : card list, move_list : move list, goal : int) = 
+  let fun end_game (end_game_cards : card list) = 
+	score (end_game_cards, goal)
+      fun officiate (card_list : card list, move_list : move list, held_cards : card list) = 
+	case move_list of 
+	    [] => end_game(held_cards)
+	  | x::xs => case x of 
+			 Discard card => officiate(card_list, xs, remove_card(held_cards, card, IllegalMove))
+		       | Draw => case card_list of 
+				     [] => end_game(held_cards)
+				   | y::ys => if sum_cards(y::held_cards) > goal
+					      then end_game(y::held_cards)
+					      else officiate(ys, xs, y::held_cards)
+  in officiate(card_list, move_list, [])
+  end
+							    
+(* Write a score_challenge and an officiate_challenge to be like their nonchallenging counterparts except each 
+ ace can have a value of 1 or 11 and score_challenge should always return the least possible score*)
+
+(*This is wrong... *) 
+fun score_challenge (card_list : card list, goal : int) = 
+  let fun count_aces (card_list : card list, num_aces : int) = 
+	case card_list of
+	    [] => num_aces
+	  | (_,Ace)::rest => count_aces(rest, num_aces + 1)
+	  | (_,_)::rest => count_aces(rest, num_aces)
+  in score(card_list, goal) - (10 * count_aces(card_list, 0))
+  end
+
+(*
+fun careful_player (card_list : card list, goal : int) = 
+  let fun careful_player (card_list : card list, held_cards : card list, move_list : move list, running_score : int) = 
+*)
+
+
+	    
+	 
+		 
+	    
