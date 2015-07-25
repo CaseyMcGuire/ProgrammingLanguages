@@ -85,4 +85,86 @@ fun first_answer f lst =
  and the result of all_answers is SOME lst where lst is lst1, lst2, .., lstn appended together (order doesn't 
  matter). *)
 
+fun all_answers f lst = 
+  foldl(fn (x,acc) => case acc of
+			  NONE => NONE
+			| SOME xs => case f x of
+					 NONE => NONE
+				       | SOME ys => SOME (ys @ xs)) (SOME []) lst
+		      
+
+
+
+
+(* Use g to define a function count_wildcards that takes a pattern and returns how many Wildcard patterns it
+ contains*)
+(* 
+ fun count_wildcards ptrn = 
+   let fun f1 _ = 1
+       fun f2 _ = 0
+   in
+       g f1 f2 *)
+val count_wildcards = g (fn (_) => 1) (fn (_) => 0)
+
+(* Use g to define a function count_wild_and_variable_lengths that takes a pattern and returns the number of 
+ Wildcard patterns it contains plus the sum of the string lengths of all the variables in the variable patterns 
+ it contains. *)
+
+val count_wild_and_variable_lengths = g (fn (_) => 1) (fn (x) => String.size x) 
+
+(* Use g to define a function count_some_var that takes a string and a pattern (as a pair) and 
+ returns the number of times the string appears as a variable in the pattern.*)
+
+fun count_some_var ptrn str = g (fn (_) => 0) (fn (x) => if x=str then 1 else 0) ptrn
+
+(* Write a function check_pat that takes a pattern and returns true if and only if all the variables appearing
+ in the pattern are distinct from each other. *)
+
+val check_pat = 
+  let fun ptrn_strings ptrn = 
+	  case ptrn of 
+	      Variable s => [s]
+	    | TupleP ps => List.foldl (fn (p,i) => (ptrn_strings p) @ i) [] ps
+	    | ConstructorP (_,p) => ptrn_strings p 
+	    | _ => []
+      fun all_unique lst = 
+	case lst of 
+	    [] => true
+	  | x::xs => if List.exists (fn (y) => y=x) xs
+		     then false
+		     else all_unique xs
+  in (all_unique o ptrn_strings)
+  end
+
+(* Write a function match that takes a value * pattern and returns a (string * valu) list option, namely NONE if
+ the pattern does not match and SOME lst where lst is the list of bindings if it does. *)
+
+fun match value_pattern = 
+  case value_pattern of
+      (_, Wildcard) => SOME []
+    | (v, Variable s)  => SOME [(s, v)]
+    | (Unit, UnitP) => SOME []
+    | (Const x, ConstP y) => SOME []
+    | (Tuple vs,TupleP ps) => 
+      let val same_length = (List.length vs) = (List.length ps)
+	  val zipped_list = ListPair.zip (vs, ps)
+      in
+	  if same_length 
+	  then all_answers match zipped_list 
+	  else NONE
+      end
+    | (Constructor(s2, v), ConstructorP(s1, p)) => if s1=s2 
+						   then match (v,p) 
+						   else NONE
+    | _ => NONE
   
+(* Write a function first_match that takes a value and a list of patterns and returns a (string * val) list option
+ namely NONE if no pattern in the list matches or SOME lst where lst is the list of bindings for the first pattern
+ in the list that matches. *)
+
+fun first_match value ptrn_list = 
+  SOME (first_answer match (map (fn (x) => (value,x)) ptrn_list)) 
+      handle NoAnswer => NONE
+
+
+(* Write a function typecheck_patterns that "type-checks" a pattern list. *)
