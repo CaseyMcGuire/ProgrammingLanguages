@@ -1,7 +1,7 @@
 
-;#lang racket
+#lang racket
 
-;(provide (all-defined-out)) ;; so we can put tests in a second file
+(provide (all-defined-out)) ;; so we can put tests in a second file
 
 ; Write a function sequence that takes 3 arguments low, high, and stride, all assumed to be numbers
 ; Further, assume stride is positive. sequence produces a list of numbers from low to high (including low
@@ -20,4 +20,6 @@
 ; strings. Each element of the output should be corresponding element of the input appended with suffix (with no
 ; extra space between the element of the suffix).
 ;(define (string-append-map xs suffix)
-
+(define (string-append-map xs suffix)
+  (map (lambda (str)
+         (string-append str suffix)) xs))
