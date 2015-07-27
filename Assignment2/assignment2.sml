@@ -177,6 +177,7 @@ fun officiate (card_list : card list, move_list : move list, goal : int) =
  ace can have a value of 1 or 11 and score_challenge should always return the least possible score*)
 
 (*This is wrong... *) 
+(*
 fun score_challenge (card_list : card list, goal : int) = 
   let fun count_aces (card_list : card list, num_aces : int) = 
 	case card_list of
@@ -185,7 +186,7 @@ fun score_challenge (card_list : card list, goal : int) =
 	  | (_,_)::rest => count_aces(rest, num_aces)
   in score(card_list, goal) - (10 * count_aces(card_list, 0))
   end
-
+*)
 (*
 fun careful_player (card_list : card list, goal : int) = 
   let fun careful_player (card_list : card list, held_cards : card list, move_list : move list, running_score : int) = 
