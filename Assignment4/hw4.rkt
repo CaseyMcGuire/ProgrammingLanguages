@@ -9,9 +9,15 @@
 
 (define sequence
   (lambda (low high stride)
-    (if (>= low high)
-        (cons low null)
-        (cons low (sequence (+ low stride) high stride)))))
+    (cond
+      ((> low high) null)
+      ((= low high) (cons low null))
+      (else (cons low (sequence (+ low stride) high stride))))))
 
 
+
+; Write a function string-append-map that takes a list of strings xs and a string suffix and returns a list of
+; strings. Each element of the output should be corresponding element of the input appended with suffix (with no
+; extra space between the element of the suffix).
+;(define (string-append-map xs suffix)
 
