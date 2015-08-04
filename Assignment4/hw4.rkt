@@ -71,3 +71,29 @@
 ; Write a function cycle-lists that takes two lists xs and ys and returns a stream. The lists may or may not be the
 ; same length, but assume they are both non-empty. The elements produced produced by the stream are pairs where
 ; the first part is from xs and the second part is from ys. 
+(define (cycle-lists xs ys)
+  (letrec ([list-cycle (lambda (cur-list total-list)
+                         (if (null? cur-list)
+                             (list-cycle total-list total-list)
+                             (cons (car cur-list) (lambda() (list-cycle (cdr cur-list) total-list)))))]
+           [f (lambda (s1 s2)
+                  (lambda () (cons (cons (car s1) (car s2)) (f ((cdr s1)) ((cdr s2))))))])
+    (f (list-cycle xs xs) (list-cycle ys ys))))
+
+; Write a function vector-assoc that a value v and a vector vec. It should behave like Racket's assoc library function
+; except (1) it processes a vector (Racket's name for an array) instead of a list, (2) it allows vector elements not to be 
+; pairs in which case it skips them, and (3) it always takes exactly two arguments. Process the vector elements in order 
+; starting from 0.
+(define (vector-assoc v vec)
+  (letrec ([f (lambda (iter)
+                (cond
+                  ((= (vector-length vec) iter) #f)
+                  ((and (pair? (vector-ref vec iter)) (equal? (car (vector-ref vec iter)) v)) (vector-ref vec iter))
+                  (else (f (+ iter 1)))))])
+    (f 0)))
+                   
+; Write a function cached-assoc that takes a list xs and a number n and returns a function that takes one argument v and 
+; returns the same thing that (assoc v xs) would return. However, you should use an n-element cache of recent results to 
+; possibly make this function faster than just calling assoc. The cache must be a Racket vector of length n that is created
+; by the call to cached-assoc and used-and-possibly mutated each time the function returned by cached-assoc is called. 
+;(define (cached-assoc xs n)
