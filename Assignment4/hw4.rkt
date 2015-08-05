@@ -96,4 +96,29 @@
 ; returns the same thing that (assoc v xs) would return. However, you should use an n-element cache of recent results to 
 ; possibly make this function faster than just calling assoc. The cache must be a Racket vector of length n that is created
 ; by the call to cached-assoc and used-and-possibly mutated each time the function returned by cached-assoc is called. 
-;(define (cached-assoc xs n)
+(define (cached-assoc xs n)
+  (letrec ([memo (make-vector n #f)]
+           [iter 0] 
+           [f (lambda (n)
+                (letrec ([cached-result (vector-assoc n memo)])
+                  (if cached-result
+                      cached-result
+                      (letrec ([list-result (assoc n xs)])
+                        (if (not list-result)
+                            list-result
+                            (begin 
+                              (print "In the cache")
+                              (vector-set! memo iter list-result)
+                              (if (= iter (- (vector-length memo) 1))
+                                  (set! iter 0)
+                                  (set! iter (+ iter 1)))
+                              list-result))))))])
+    f))
+                      
+; Define a macro that is used like (while-less e1 do e2) where e1 and e2 are expressions and while-less and do are syntax
+; (keywords). The macro should do the following: 
+; It evaluates e1 exactly once.
+; It evaluates e2 at least once.
+; It keeps evaluating e2 until and only until the result is not a number less than the result of the evaluation of e1.
+; Assuming evaluation terminates, the result is #t.
+; Assume e1 and e2 produce numbers; your macro can do anything or fail mysteriously otherwise. 
