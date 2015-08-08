@@ -122,3 +122,13 @@
 ; It keeps evaluating e2 until and only until the result is not a number less than the result of the evaluation of e1.
 ; Assuming evaluation terminates, the result is #t.
 ; Assume e1 and e2 produce numbers; your macro can do anything or fail mysteriously otherwise. 
+(define-syntax while-less
+  (syntax-rules (do)
+    [(while-less e1 do e2)
+     (letrec ([exp1 e1]
+           [f (lambda (x) 
+                (if (<= exp1 x)
+                    #t
+                    (f e2)))])
+       (f e2))]))
+       
