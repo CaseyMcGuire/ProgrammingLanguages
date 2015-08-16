@@ -60,9 +60,10 @@
                (int (+ (int-num v1) 
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
-        [(fun? e) (closure (env e))]
+        [(fun? e) (closure env e)]
         [(int? e) e]
         [(closure? e) e]
+        [(aunit? e) e]
         [(ifgreater? e)
          (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
                [v2 (eval-under-env (ifgreater-e2 e) env)])
@@ -121,31 +122,57 @@
         
 ;; Problem 3
 
+;; Write a Racket functino ifaunit that takes three MUPL expressions e1, e2, and e3. It returns a MUPL expression that
+;; when run evaluates e1 and if the result is MUPL's aunit then it evaluates e2 and that is the overall result, else 
+;; it evaluates e3 and that is the overall result.
 (define (ifaunit e1 e2 e3) 
   (ifgreater (isaunit e1) (int 0) e2 e3))
 
+;; Write a Racket function mlet* that takes a Racket list of Racket pairs '((s1 . e1) ... (si . ei) ... (sn . en))
+;; and a final MUPL expression en+1. In each pair, assume si is a Racket string and ei is a MUPL expression. mlet*
+;; returns a MUPL expression whose value is en+1 evaluated in an environment where each si is a variable bound to the 
+;; result of evaluating the corresponding ei for i <= i <= n. The bindings are done sequentially.
 (define (mlet* lstlst e2)
-  (letrec ([f (lambda (lst env)
+  (letrec ([f (lambda (lst)
                 (if (null? lst)
-                    env
+                    e2
                     (let* ([head (car lst)]
                            [var-name (car head)]
-                           [mupl-exp (cdr head)]
-                           [var-binding (cons var-name (eval-under-env mupl-exp env))]
-                           [new-env (cons var-binding env)])
-                      (f (cdr lst) new-env))))])
-    (eval-under-env e2 (f lstlst null))))
+                           [mupl-exp (cdr head)])
+                      (mlet var-name mupl-exp (f (cdr lst))))))])
+    (f lstlst)))
                            
-
 (define (ifeq e1 e2 e3 e4) 
-  
+  (let* ([exp4 (ifgreater (var "_x") (var "_y") e4 e3)]
+        [exp3 (ifgreater (var "_y") (var "_x") e4 exp4)]
+        [exp2 (mlet "_y" e2 exp3)]
+        [exp1 (mlet "_x" e1 exp2)])
+    exp1))
+        
 ;; Problem 4
 
-(define mupl-map "CHANGE")
+;; Bind to the Racket variable mupl-map a MUPL function that acts like map. Your function should be curried. it should
+;; take a MUPL function and return a MUPL function that takes a MUPL list and applies the function to every element
+;; of the list returning a new MUPL list.
+(define mupl-map 
+ (fun #f "func" 
+      (fun "iter" "lst"
+           (ifaunit (var "lst")
+               (aunit)
+               (apair (call (var "func") (fst (var "lst"))) 
+                      (call (var "iter") (snd (var "lst"))))))))
+
+
+           
 
 (define mupl-mapAddN 
   (mlet "map" mupl-map
-        "CHANGE (notice map is now in MUPL scope)"))
+      (fun #f "i"
+           (fun #f "list" 
+                (call 
+                 (call (var "map") (fun #f "e" (add (var "i") (var "e")))) 
+                 (var "list"))))))
+        
 
 ;; Challenge Problem
 
