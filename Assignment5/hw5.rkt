@@ -124,11 +124,21 @@
 (define (ifaunit e1 e2 e3) 
   (ifgreater (isaunit e1) (int 0) e2 e3))
 
-;(define (mlet* lstlst e2)
- ; (let ([mupl-list (racket-list
+(define (mlet* lstlst e2)
+  (letrec ([f (lambda (lst env)
+                (if (null? lst)
+                    env
+                    (let* ([head (car lst)]
+                           [var-name (car head)]
+                           [mupl-exp (cdr head)]
+                           [var-binding (cons var-name (eval-under-env mupl-exp env))]
+                           [new-env (cons var-binding env)])
+                      (f (cdr lst) new-env))))])
+    (eval-under-env e2 (f lstlst null))))
+                           
 
-(define (ifeq e1 e2 e3 e4) "CHANGE")
-
+(define (ifeq e1 e2 e3 e4) 
+  
 ;; Problem 4
 
 (define mupl-map "CHANGE")
