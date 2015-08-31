@@ -118,6 +118,50 @@ class Point < GeometryValue
     @x = x
     @y = y
   end
+
+  def eval_prog env
+    self
+  end
+
+  def preprocess_prog
+    self
+  end
+  
+  def shift(dx,dy)
+    Point.new(@x + dx, @y + dy)
+  end
+
+  def intersect other
+    other.intersectPoint self
+  end
+  
+  def intersectPoint p
+    if real_close_point(@x,@y,p.x,p.y)
+      Point.new(@x,@y)
+    else
+      NoPoints.new
+    end
+  end
+
+  def intersectLine line
+    if real_close(@y, line.m * @x + line.b)
+      Point.new(@x,@y)
+    else
+      NoPoints.new
+    end
+  end
+
+  def intersectVerticalLine vline
+    if real_close(@x, vline.x)
+      Point.new(@x,@y)
+    else
+      NoPoints.new
+    end
+  end
+
+  def intersectWithSegmentAsLineResult seg
+    
+  end
 end
 
 class Line < GeometryValue
