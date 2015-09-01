@@ -160,15 +160,7 @@ class Point < GeometryValue
   end
 
   def intersectWithSegmentAsLineResult seg
-    in_between = Proc.new {|v,end1,end2| 
-      (end1 - GeometryExpression::Epsilon <= v && v <= end2 + GeometryExpression::Epsilon) || 
-      (end2 - GeometryExpression::Epsilon <= v && v <= end1 + GeometryExpression::Epsilon)
-    }
-      if in_between.call(@x, seg.x1, seg.x2) && in_between.call(@y, seg.y1, seg.y2)
-       Point.new(@x,@y) 
-      else
-        NoPoints.new
-      end
+    seg.intersectPoint self
   end
 end
 
@@ -304,23 +296,74 @@ class LineSegment < GeometryValue
   end
 
   def intersect other
-    other.intersectLine self
+    other.intersectLineSegment self
   end
 
   def intersectPoint p
-    
+    in_between = Proc.new {|v,end1,end2| 
+      (end1 - GeometryExpression::Epsilon <= v && v <= end2 + GeometryExpression::Epsilon) || 
+      (end2 - GeometryExpression::Epsilon <= v && v <= end1 + GeometryExpression::Epsilon)
+    }
+    if in_between.call(p.x, @x1, @x2) && in_between.call(p.y, @y1, @y2)
+      Point.new(p.x,p.y) 
+    else
+      NoPoints.new
+    end
   end
 
   def intersectLine line
-
+    self
   end
 
   def intersectVerticalLine vline
-
+    self
   end
 
   def intersectWithSegmentAsLineResult seg
+    x1start, y1start, x1end, y1end = @x1, @y1, @x2, @y2
+    x2start, y2start, x2end, y2end = seg.x1, seg.y1, seg.x2, seg.y2
 
+    if real_close(x1start, x1end)
+      aXstart,aYstart,aXend,aYend = nil,nil,nil,nil
+      bXstart,bYstart,bXend,bYend = nil,nil,nil,nil
+      if y1start < y2start
+        aXstart,aYstart,aXend,aYend = @x1, @y1, @x2, @y2
+        bXstart,bYstart,bXend,bYend = seg.x1, seg.y1, seg.x2, seg.y2
+      else
+        aXstart,aYstart,aXend,aYend = seg.x1, seg.y1, seg.x2, seg.y2
+        bXstart,bYstart,bXend,bYend = @x1, @y1, @x2, @y2
+      end
+      
+      if real_close(aYend,bYstart)
+        Point.new(aXend,aYend)
+      elsif aYend < bYstart
+        NoPoints.new
+      elsif aYend > bYend
+        LineSegment.new(bXstart,bYstart,bXend,bYend)
+      else
+        LineSegment.new(bXstart, bYstart, aXend,aYend)
+      end
+    else
+      aXstart,aYstart,aXend,aYend = nil,nil,nil,nil
+      bXstart,bYstart,bXend,bYend = nil,nil,nil,nil
+      if x1start < x2start
+        aXstart,aYstart,aXend,aYend = @x1, @y1, @x2, @y2
+        bXstart,bYstart,bXend,bYend = seg.x1, seg.y1, seg.x2, seg.y2
+      else
+        aXstart,aYstart,aXend,aYend = seg.x1, seg.y1, seg.x2, seg.y2
+        bXstart,bYstart,bXend,bYend = @x1, @y1, @x2, @y2
+      end
+      
+      if real_close(aXend,bXstart)
+        Point.new(aXend,aYend)
+      elsif aXend < bXstart
+        NoPoints.new
+      elsif aXend > bXend
+        LineSegment.new(bXstart,bYstart,bXend,bYend)
+      else
+        LineSegment.new(bXstart,bYstart,aXend,aYend)
+      end
+    end
   end
 end
 
@@ -333,6 +376,14 @@ class Intersect < GeometryExpression
     @e1 = e1
     @e2 = e2
   end
+
+  def preprocess_prog
+    Intersect.new(@e1.preprocess_prog, @e2.preprocess_prog)
+  end
+
+  def eval_prog env
+    @e1.eval_prog(env).intersect(@e2.eval_prog(env))
+  end
 end
 
 class Let < GeometryExpression
@@ -344,6 +395,16 @@ class Let < GeometryExpression
     @e1 = e1
     @e2 = e2
   end
+
+  def preprocess_prog
+    Let.new(@s, @e1.preprocess_prog, @e2.preprocess_prog)
+  end
+
+  def eval_prog env
+    new_env = env.collect {|x| x }.keep_if {|x| x[0] != @s }
+    new_env << [@s, @e1.eval_prog(env)]
+    @e2.eval_prog(new_env)
+  end
 end
 
 class Var < GeometryExpression
@@ -352,6 +413,11 @@ class Var < GeometryExpression
   def initialize s
     @s = s
   end
+
+  def preprocess_prog
+    self
+  end
+  
   def eval_prog env # remember: do not change this method
     pr = env.assoc @s
     raise "undefined variable" if pr.nil?
@@ -366,5 +432,13 @@ class Shift < GeometryExpression
     @dx = dx
     @dy = dy
     @e = e
+  end
+
+  def preprocess_prog
+    self
+  end
+
+  def eval_prog env
+    @e.shift(@dx,@dy)
   end
 end
